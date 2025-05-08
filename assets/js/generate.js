@@ -20,6 +20,12 @@ const copyBtn = document.getElementById('copy-btn');
 const saveBtn = document.getElementById('save-btn');
 const snippetOutput = document.getElementById('snippet-output');
 
+// Attach real-time update listeners (added)
+snippetNameInput.addEventListener('input', updateSnippetPreview);
+snippetPrefixInput.addEventListener('input', updateSnippetPreview);
+languageSelect.addEventListener('change', updateSnippetPreview);
+editorSelect.addEventListener('change', updateSnippetPreview);
+
 // Language mode mapping
 const languageModes = {
     javascript: 'javascript',
@@ -46,6 +52,7 @@ const languageScopes = {
 languageSelect.addEventListener('change', () => {
     const mode = languageModes[languageSelect.value];
     codeEditor.setOption('mode', mode);
+    updateSnippetPreview();
 });
 
 // Generate snippet
@@ -72,20 +79,22 @@ generateBtn.addEventListener('click', () => {
 
 // Initialize snippet preview with template
 function initializeSnippetPreview() {
+    const language = languageSelect.value;
+    const scope = languageScopes[language];
     const template = `{
     "Snippet Name": {
         "prefix": "trigger",
         "body": [
             "// Your code here"
         ],
-        "scope": "language"
+        "scope": "${scope}"
     }
 }`;
     snippetOutput.textContent = template;
 }
 
 // Update snippet preview in real-time
-codeEditor.on('change', () => {
+function updateSnippetPreview() {
     const code = codeEditor.getValue();
     const language = languageSelect.value;
     const editor = editorSelect.value;
@@ -104,7 +113,10 @@ codeEditor.on('change', () => {
     }
 
     snippetOutput.textContent = snippet;
-});
+}
+
+// Add real-time update listener for code editor
+codeEditor.on('change', updateSnippetPreview);
 
 // Copy snippet to clipboard
 copyBtn.addEventListener('click', () => {
@@ -278,6 +290,27 @@ function generateAtomSnippet(code, name, prefix, scope) {
 ${processedCode}
     """
     'scope': '${scope}'`;
+}
+// added
+function updateSnippetPreview() {
+    const code = codeEditor.getValue();
+    const language = languageSelect.value;
+    const editor = editorSelect.value;
+    const name = snippetNameInput.value || 'Untitled Snippet';
+    const prefix = snippetPrefixInput.value || 'snippet';
+    const scope = languageScopes[language];
+
+    let snippet = '';
+
+    if (editor === 'vscode') {
+        snippet = generateVSCodeSnippet(code, name, prefix, scope);
+    } else if (editor === 'sublime') {
+        snippet = generateSublimeSnippet(code, name, prefix, scope);
+    } else if (editor === 'atom') {
+        snippet = generateAtomSnippet(code, name, prefix, scope);
+    }
+
+    snippetOutput.textContent = snippet;
 }
 
 // Process code to identify and replace tab stops
